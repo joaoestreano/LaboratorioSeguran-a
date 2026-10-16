@@ -1,13 +1,11 @@
-import { Router } from "express";
-import { login, atualizarIptu, novoLogin, getIptuPorIdUsuario, getQRCodeOrCodBarras, getIptus } from "../controllers/usuarioController";
+import { Router } from 'express';
+import { login, logout, obterPerfil } from '../controllers/usuarioController';
+import { autenticarJWT } from '../Services/jwtServices';
 
 const router = Router();
 
-router.post("/login", login);
-router.post("/novo-login", novoLogin);
-router.post("/atualizar-iptu", atualizarIptu);
-router.get("/iptu-por-usuario", getIptuPorIdUsuario);
-router.get("/codigo-qr-ou-barra", getQRCodeOrCodBarras);
-router.get("/iptus", getIptus);
+router.post('/login', login);
+router.post('/logout', logout); // Rota para limpar o cookie de sessão
+router.get('/perfil', autenticarJWT, obterPerfil);
 
 export default router;

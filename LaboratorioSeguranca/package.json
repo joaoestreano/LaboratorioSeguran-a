@@ -1,9 +1,11 @@
 {
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "jsonwebtoken": "^9.0.3",
     "xss": "^1.0.15"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/jsonwebtoken": "^9.0.10"
   }
 }

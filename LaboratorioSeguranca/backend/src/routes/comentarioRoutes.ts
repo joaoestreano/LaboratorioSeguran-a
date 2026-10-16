@@ -1,13 +1,10 @@
 import { Router } from 'express';
 import { listarComentarios, criarComentario } from '../controllers/comentarioController';
-import { autenticarToken } from '../middlewares/authMiddleware';
+import { autenticarJWT } from '../Services/jwtServices';
 
 const router = Router();
 
-// Qualquer usuário pode ver os comentários
-router.get('/comentarios', listarComentarios);
-
-// Apenas usuários autenticados via JWT podem criar comentários
-router.post('/comentarios', autenticarToken, criarComentario);
+router.get('/', listarComentarios);
+router.post('/', autenticarJWT, criarComentario); // Exige autenticação válida para comentar
 
 export default router;
