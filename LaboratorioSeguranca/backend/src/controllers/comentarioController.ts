@@ -1,59 +1,31 @@
+import { Response } from 'express';
+import { pool } from '../database';
+import { CustomRequest } from '../middlewares/authMiddleware';
 
-import { Request, Response } from "express";
-import db from "../database";
-
-
-export const criarComentario = async (
-    req: Request,
-    res: Response
-) => {
-
-    const {
-        texto,
-        usuarioId
-    } = req.body;
-
-    const query =
-        `INSERT INTO comentario (texto, usuario_id)
-         VALUES ('${texto}', '${usuarioId}')`;
-
-    console.log(`Query Executada: ${query}`);
-
-
-    try {
-
-        await db.query(query);
-
-        res.status(201).json({
-            message: "Comentário criado"
-        });
-
-    } catch (err: any) {
-
-        res.status(500).json({
-            error: err.message
-        });
-    }
+export const listarComentarios = async (req: CustomRequest, res: Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM comentarios ORDER BY id DESC');
+    return res.json(result.rows);
+  } catch (error) {
+    return res.status(500).json({ erro: 'Erro ao buscar comentários.' });
+  }
 };
 
+export const criarComentario = async (req: CustomRequest, res: Response) => {
+  const { texto } = req.body;
+  const usuarioId = req.usuario?.id; // Obtido com segurança através do JWT
 
-export const listarComentarios = async (
-    _req: Request,
-    res: Response
-) => {
+  if (!texto) {
+    return res.status(400).json({ erro: 'O texto do comentário é obrigatório.' });
+  }
 
-    try {
+  try {
+    // PREVENÇÃO DE SQL INJECTION: Consulta parametrizada
+    const query = 'INSERT INTO comentarios (texto, usuario_id) VALUES ($1, $2) RETURNING *';
+    const result = await pool.query(query, [texto, usuarioId]);
 
-        const result = await db.query(
-            "SELECT * FROM comentario"
-        );
-
-        res.json(result.rows);
-
-    } catch (err: any) {
-
-        res.status(500).json({
-            error: err.message
-        });
-    }
+    return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    return res.status(500).json({ erro: 'Erro ao criar comentário.' });
+  }
 };

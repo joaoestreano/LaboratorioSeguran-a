@@ -1,212 +1,49 @@
-import { Request, Response } from "express";
-import db from "../database";
-
-
+import { Request, Response } from 'express';
+import { pool } from '../database';
+import { gerarToken } from '../Services/jwtServices';
 
 export const login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+  const { email, senha } = req.body;
 
-    const query =
-        `SELECT * FROM usuario WHERE email = '${email}' AND senha = '${password}'`;
+  try {
+    // PREVENÇÃO DE SQL INJECTION: Consulta parametrizada ($1, $2)
+    const query = 'SELECT * FROM usuarios WHERE email = $1 AND senha = $2';
+    const result = await pool.query(query, [email, senha]);
 
-    console.log(`Query Executada: ${query}`);
-
-    const result = await db.query(query);
-
-    if (result.rowCount && result.rowCount > 0) {
-        
-        res.json({
-            success: true,
-            user: result.rows[0]
-        });
-
-    } else {
-        res.status(401).json({
-            success: false,
-            message: "Falha no login"
-        });
-    }
-};
-
-
-export const novoLogin = async (req: Request, res: Response) => {
-    const { email, password, nome } = req.body;
-
-    const queryNomeIpuExiste =
-        `SELECT * FROM iptu WHERE nome = '${nome}'`;
-
-    console.log(`Query Executada: ${queryNomeIpuExiste}`);
-
-    const iptuResult = await db.query(queryNomeIpuExiste);
-
-    if (iptuResult.rowCount && iptuResult.rowCount > 0) {
-
-        const query =
-            `INSERT INTO usuario (email, senha, nome, tipo_usuario_id)
-             VALUES ('${email}', '${password}', '${nome}', 3)`;
-
-        console.log(`Query Executada: ${query}`);
-
-        const result = await db.query(query);
-
-        const queryIdUsuario =
-            `SELECT id FROM usuario
-             WHERE email = '${email}' AND senha = '${password}'`;
-
-        console.log(`Query Executada: ${queryIdUsuario}`);
-
-        const resultIdUsuario = await db.query(queryIdUsuario);
-
-        const queryUpdateTabelaIptu =
-            `UPDATE iptu
-             SET usuario_id = '${resultIdUsuario.rows[0].id}'
-             WHERE nome = '${nome}'`;
-
-        console.log(`Query Executada: ${queryUpdateTabelaIptu}`);
-
-        const resultUpdate = await db.query(queryUpdateTabelaIptu);
-
-        if (
-            result.rowCount &&
-            result.rowCount > 0 &&
-            resultUpdate.rowCount &&
-            resultUpdate.rowCount > 0
-        ) {
-
-            res.json({
-            success: true,
-            user: result.rows[0]
-        
-            });
-
-        } else {
-            res.status(401).json({
-                success: false,
-                message: "Falha no login"
-            });
-        }
-
-    } else {
-        res.status(404).json({
-            success: false,
-            message: `Nome '${nome}' não encontrado no cadastro de municipes`
-        });
-    }
-};
-
-
-export const atualizarIptu = async (req: Request, res: Response) => {
-
-    const {
-        usuarioId,
-        novoValor
-    } = req.body;
-
-    const query =
-        `UPDATE iptu
-         SET valor = '${novoValor}'
-         WHERE usuario_id = '${usuarioId}'`;
-
-    console.log(`Query Executada: ${query}`);
-
-    try {
-        await db.query(query);
-
-        res.json({
-            message: "IPTU atualizado"
-        });
-
-    } catch (err: any) {
-        res.status(500).json({
-            error: err.message
-        });
-    }
-};
-
-
-export const getIptuPorIdUsuario = async (
-    req: Request,
-    res: Response
-) => {
-
-    const {
-        usuarioId,
-    } = req.body;
-    const query =
-        `SELECT * FROM iptu WHERE usuario_id = '${usuarioId}'`;
-
-    console.log(`Query Executada: ${query}`);
-
-    try {
-
-        const result = await db.query(query);
-
-        console.log(`Retorno: ${JSON.stringify(result.rows)}`);
-
-        res.json({
-            iptu: result.rows
-        });
-
-    } catch (err: any) {
-
-        res.status(500).json({
-            error: err.message
-        });
-    }
-};
-
-
-export const getIptus = async (
-    req: Request,
-    res: Response
-) => {
-
-    
-    const query = `SELECT * FROM iptu`;
-
-    console.log(`Query Executada: ${query}`);
-
-    try {
-
-        const result = await db.query(query);
-
-        res.json({
-            iptu: result.rows
-        });
-
-    } catch (err: any) {
-
-        res.status(500).json({
-            error: err.message
-        });
-    }
-};
-
-
-export const getQRCodeOrCodBarras = async (
-    req: Request,
-    res: Response
-) => {
-
-    const tipo = req.query.tipo as string;
-
-
-    let codigoHtml = "";
-
-    if (tipo === "codigoDeBarras") {
-
-        codigoHtml =
-            `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=123456789" />`;
-
-    } else if (tipo === "qrcode") {
-
-        codigoHtml =
-            `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=QRCodeDemo" />`;
+    if (result.rows.length === 0) {
+      return res.status(401).json({ erro: 'Email ou senha incorretos.' });
     }
 
-    res.send(`
-        <h2>Tipo selecionado: ${tipo}</h2>
-        ${codigoHtml}
-    `);
+    const usuario = result.rows[0];
+
+    // Gerando o token JWT
+    const token = gerarToken({
+      id: usuario.id,
+      email: usuario.email,
+      cargo: usuario.cargo || 'user'
+    });
+
+    return res.json({
+      mensagem: 'Login realizado com sucesso',
+      token,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        cargo: usuario.cargo
+      }
+    });
+  } catch (error) {
+    console.error('Erro no login:', error);
+    return res.status(500).json({ erro: 'Erro interno no servidor.' });
+  }
 };
 
+export const listarUsuarios = async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query('SELECT id, nome, email, cargo FROM usuarios');
+    return res.json(result.rows);
+  } catch (error) {
+    return res.status(500).json({ erro: 'Erro ao buscar usuários.' });
+  }
+};
