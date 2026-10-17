@@ -1,13 +1,10 @@
-import { Router } from "express";
-import { login, atualizarIptu, novoLogin, getIptuPorIdUsuario, getQRCodeOrCodBarras, getIptus } from "../controllers/usuarioController";
+import { Router } from 'express';
+import { loginUsuario, registrarUsuario, logoutUsuario } from '../controllers/usuarioController';
 
 const router = Router();
 
-router.post("/login", login);
-router.post("/novo-login", novoLogin);
-router.post("/atualizar-iptu", atualizarIptu);
-router.get("/iptu-por-usuario", getIptuPorIdUsuario);
-router.get("/codigo-qr-ou-barra", getQRCodeOrCodBarras);
-router.get("/iptus", getIptus);
+router.post('/login', loginUsuario);
+router.post('/novo-login', registrarUsuario);
+router.post('/logout', logoutUsuario); // A linha 10 do seu erro
 
 export default router;
