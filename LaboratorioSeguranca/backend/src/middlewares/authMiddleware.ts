@@ -1,18 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
-import { verificarToken } from '../Services/jwtServices';
+import { jwtService } from '../Services/jwtServices';
 
-export const autenticarMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.cookies.token; // Obtém o token a partir do cookie
+export const verificarAutenticacao = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    return res.status(401).json({ mensagem: 'Acesso negado. Token não fornecido.' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Acesso negado. Token não fornecido.' });
   }
 
-  try {
-    const payload = verificarToken(token);
-    req.usuario = payload;
-    next();
-  } catch (error) {
-    return res.status(403).json({ mensagem: 'Token inválido ou expirado.' });
+  const token = authHeader.split(' ')[1];
+  const payload = jwtService.validarToken(token);
+
+  if (!payload) {
+    return res.status(401).json({ erro: 'Token inválido ou expirado.' });
   }
+
+  // Injeta os dados do usuário na requisição para uso nos controllers
+  req.usuario = payload;
+  next();
 };

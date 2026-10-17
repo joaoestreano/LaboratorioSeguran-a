@@ -1,14 +1,9 @@
-import { Router } from 'express';
-import { listarComentarios, criarComentario } from '../controllers/comentarioController';
-import { autenticarJWT } from '../Services/jwtServices';
+import { Router } from "express";
+import { criarComentario, listarComentarios } from "../controllers/comentarioController";
 
 const router = Router();
 
-// Qualquer um pode listar os comentários
-router.get('/', listarComentarios);
-
-// MAS apenas usuários com token válido (autenticados) podem criar comentários
-// O middleware "autenticarJWT" é chamado ANTES do "criarComentario"
-router.post('/', autenticarJWT, criarComentario);
+router.post("/", criarComentario);
+router.get("/", listarComentarios);
 
 export default router;

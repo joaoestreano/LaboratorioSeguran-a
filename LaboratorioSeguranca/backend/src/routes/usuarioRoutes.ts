@@ -1,14 +1,13 @@
-import { Router } from 'express';
-import { login, logout, obterPerfil } from '../controllers/usuarioController';
-import { autenticarJWT } from '../Services/jwtServices';
+import { Router } from "express";
+import { login, atualizarIptu, novoLogin, getIptuPorIdUsuario, getQRCodeOrCodBarras, getIptus } from "../controllers/usuarioController";
 
 const router = Router();
 
-// Rotas públicas
-router.post('/login', login);
-router.post('/logout', logout);
-
-// Rota protegida: O usuário precisa de um JWT válido para ver seu próprio perfil
-router.get('/perfil', autenticarJWT, obterPerfil);
+router.post("/login", login);
+router.post("/novo-login", novoLogin);
+router.post("/atualizar-iptu", atualizarIptu);
+router.get("/iptu-por-usuario", getIptuPorIdUsuario);
+router.get("/codigo-qr-ou-barra", getQRCodeOrCodBarras);
+router.get("/iptus", getIptus);
 
 export default router;
